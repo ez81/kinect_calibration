@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find openni_launch)/launch/openni.launch"/>
+  <include file="$(find kinect_calibration)/launch/track_ar_tag.launch"/>
+  <param name="object_tracker/config_folder" value="$(find kinect_calibration)/config/"/>
+</launch>
