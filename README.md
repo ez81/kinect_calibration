@@ -30,4 +30,5 @@ tf publication = true
 
 ## Find the transformation
 Run the script that look up transformation. The transformation is going to be saved to base_camera_tf.yaml.
+
 `rosrun kinect_calinration get_ar_calib.py`
