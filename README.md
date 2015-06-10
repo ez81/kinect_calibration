@@ -18,6 +18,8 @@ The checker borad we used is 9x6 with square of 27 mm width.
 # Extrinsic calibration
 First we need to know the ar tag position in the robot coordinate and sepcify that in config/ar_calib.yaml. If the setup is the same as the picture, the rotation is [1, 0, 0, 0, 1, 0, 0, 0, 1]. The translation is measured by moving the robot end effector to the tag and readt the end effector position. 
 
+<img src="https://github.com/YZHANGFPE/baxter_kincet/blob/master/img/setup.jpg" width="500">
+
 ## AR tag tracking
 `sudo apt-get install ros-indigo-ar-track-alvar`
 
