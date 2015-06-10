@@ -38,8 +38,13 @@ def getTfFromMatrix(matrix):
     return trans, tf.transformations.quaternion_from_euler(*angles)
 
 def lookupTransform(tf_listener, target, source):
-    tf_listener.waitForTransform(target, source, rospy.Time(), rospy.Duration(4.0))
-    trans, rot = tf_listener.lookupTransform(target, source, rospy.Time())
+    while not rospy.is_shutdown():
+        try:
+            tf_listener.waitForTransform(target, source, rospy.Time(0), rospy.Duration(4.0))
+            break
+        except (tf.Exception, tf.ConnectivityException, tf.LookupException):
+            continue
+    trans, rot = tf_listener.lookupTransform(target, source, rospy.Time(0))
     euler = tf.transformations.euler_from_quaternion(rot)
     source_target = tf.transformations.compose_matrix(translate = trans,
                                                      angles = euler)
@@ -94,16 +99,20 @@ while not rospy.is_shutdown():
     # base to marker = forearm to marker * base to forearm
     base_marker = reference_marker.dot(base_reference)
     trans, rot = getTfFromMatrix(numpy.linalg.inv(base_marker))
-    tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), "/ar_marker_2", "/base")
+    tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), "/ar_marker_1", "/base")
     marker_pose = getPoseFromMatrix(base_marker)
 
     # marker to camera
-    marker_camera = lookupTransform(tf_listener, '/camera_rgb_optical_frame', '/ar_marker_'+str(markernum))
+    marker_camera = lookupTransform(tf_listener, '/camera_rgb_optical_frame', '/ar_marker_1')
+    #marker_camera = lookupTransform(tf_listener,  '/ar_marker_1', '/camera_rgb_optical_frame')
+
 
     # base to camera = marker to camera * base to marker
     base_camera = marker_camera.dot(base_marker)
     trans, rot = getTfFromMatrix(numpy.linalg.inv(base_camera))
     print "transformation matrix"
+    print base_camera
+    print "inverse transformation matrix"
     print numpy.linalg.inv(base_camera)
 
     tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), "/camera_rgb_optical_frame", "/base")
