@@ -103,19 +103,27 @@ while not rospy.is_shutdown():
     marker_pose = getPoseFromMatrix(base_marker)
 
     # marker to camera
-    marker_camera = lookupTransform(tf_listener, '/camera_rgb_optical_frame', '/ar_marker_1')
+    marker_camera = lookupTransform(tf_listener, '/camera_link', '/ar_marker_1')
     #marker_camera = lookupTransform(tf_listener,  '/ar_marker_1', '/camera_rgb_optical_frame')
 
 
     # base to camera = marker to camera * base to marker
     base_camera = marker_camera.dot(base_marker)
-    trans, rot = getTfFromMatrix(numpy.linalg.inv(base_camera))
-    print "transformation matrix"
-    print base_camera
-    print "inverse transformation matrix"
-    print numpy.linalg.inv(base_camera)
 
-    tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), "/camera_rgb_optical_frame", "/base")
+    # base to camera link = camera_rgb to camera link * base to camera_rgb
+    # rgb_link = lookupTransform(tf_listener, '/camera_link', '/camera_rgb_optical_frame')
+    # base_camera_rgb = rgb_link.dot(base_camera_rgb)
+    trans, rot = getTfFromMatrix(numpy.linalg.inv(base_camera))
+
+    # ref to camera = base to camera * ref to base
+    ref_frame = '/right_hand'
+    ref_base = lookupTransform(tf_listener, '/base', ref_frame)
+    ref_camera = base_camera.dot(ref_base)
+    trans_ref, rot_ref = getTfFromMatrix(numpy.linalg.inv(ref_camera))
+    # write to yaml based on this trans and rot from ref_frame to camera_frame
+
+
+    tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), "/camera_link", "/base")
     camera_pose = getPoseFromMatrix(base_camera)
     
     marker_msg = create_marker("marker_pose", 44, Marker.CUBE, marker_pose, (0, 255, 0), squaredims )
@@ -127,6 +135,7 @@ while not rospy.is_shutdown():
     msg = [marker_msg, camera_msg]
 
     marker_pub.publish(msg)
+    print "camera transfer is: " + str(trans)
     rate.sleep()
 
 print "Writing transform to yaml file"
@@ -140,6 +149,6 @@ for elem in rot:
     lines[1] += str(elem) + ', '
 lines[1] += ']\n'
 lines.append('parent: /base\n')
-lines.append('child: /camera_rgb_optical_frame\n')
+lines.append('child: /camera_link\n')
 f.writelines(lines)
 f.close()

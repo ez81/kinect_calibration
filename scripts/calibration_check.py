@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 import tf
+import traceback
 
 import pygst
 import gst
@@ -60,6 +61,7 @@ class vision_service():
         self.y = 0
         self.z = 0
         self.depth_image = 0
+        self.tf_listener = tf.TransformListener()
         
         camera_topic = '/camera/rgb/image_rect_color'
         self.right_camera = rospy.Subscriber(camera_topic, Image, self._on_camera)
@@ -106,9 +108,10 @@ class vision_service():
                 # good
                 # transform = np.asarray([[ -7.81514275e-03 , -5.43990398e-01 , 8.39055046e-01 , 1.58875856e-01],[ -9.99896206e-01 ,1.44074926e-02 , 2.76573540e-05 ,9.82764204e-03],[ -1.21037247e-02 ,-8.38967741e-01 ,-5.44046532e-01 , 5.03940029e-01], [  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00]]) #good
                 # test
-                transform = np.asarray([[ -0.05608397, -0.66548672 , 0.74429968 , 0.1739261],[ -0.99817925 , 0.05394733 ,-0.02697922 , 0.03507113],[ -0.02219867, -0.7444576 , -0.66730061 , 0.54726551], [  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00]])
-
-                robot_point = np.dot(transform,np.transpose(kinect_point))
+                #transform = np.asarray([[ -0.05608397, -0.66548672 , 0.74429968 , 0.1739261],[ -0.99817925 , 0.05394733 ,-0.02697922 , 0.03507113],[ -0.02219867, -0.7444576 , -0.66730061 , 0.54726551], [  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  1.00000000e+00]])
+                kinect_base = lookupTransform(self.tf_listener, '/base', '/camera_rgb_optical_frame' )
+                print kinect_base
+                robot_point = np.dot(kinect_base,np.transpose(kinect_point))
                 self.x = robot_point[0]
                 self.y = robot_point[1]
                 self.z = robot_point[2]
@@ -184,7 +187,7 @@ def ik(pose, side):
         #rospy.sleep(0.05)
 
     else:
-        print("INVALID POSE - No Valid Joint Solution Found.")
+        #print("INVALID POSE - No Valid Joint Solution Found.")
         return 0
 
 def move_to_pose(left_pose = None, right_pose = None, timeout = 2.0):
@@ -208,6 +211,26 @@ def vision_request(name):
 def request_object(name):
     resp = vision_request(name)
     print resp
+
+def lookupTransform(tf_listener, target, source):
+    trans = []
+    rot = []
+    
+    while not rospy.is_shutdown():
+        try:
+            #tf_listener.waitForTransform(target, source, rospy.Time.now(), rospy.Duration(4.0))
+            trans, rot = tf_listener.lookupTransform(target, source, rospy.Time(0))
+            break
+        except (tf.Exception, tf.ConnectivityException, tf.LookupException):
+        #except (tf.ExtrapolationException):
+            print(traceback.format_exc())
+            continue
+    #trans, rot = tf_listener.lookupTransform(target, source, rospy.Time(0))
+    euler = tf.transformations.euler_from_quaternion(rot)
+    source_target = tf.transformations.compose_matrix(translate = trans,
+                                                     angles = euler)
+    #print "looked up transform from", source, "to", target, "-", source_target
+    return source_target
 
     
 
