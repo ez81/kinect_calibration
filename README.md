@@ -34,3 +34,7 @@ tf publication = true
 Run the script that look up transformation. The transformation is going to be saved to base_camera_tf.yaml.
 
 `rosrun kinect_calinration get_ar_calib.py`
+
+## Run tf publisher
+`rosrun kinect_cibration publish_kinect_tf.py`
+
