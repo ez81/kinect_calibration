@@ -1,7 +1,7 @@
 markernum: 1
 # rotation and translate from frame to marker
 #0.1848+0.11684+0.05974
-measured_translation: [0.736, 0.090, 0.1247]
+measured_translation: [0.59872, 0.27127, -0.15287]
 measured_rot: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 frame: "/base"
 
